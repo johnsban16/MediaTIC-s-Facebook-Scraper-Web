@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css?family=Raleway');
+@import url('https://fonts.googleapis.com/css?family=Montserrat');
+
+h1,h2,h3,h4,h5{
+    font-family: 'Raleway', sans-serif;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 100;
+    color: #242424;
+}
+
+label, select, input{
+    color: #313131;
+}
+
+.top-bar, .top-bar ul, .top-bar a{
+    background-color: #34518d;
+    color: #ffffff;
+}
+
+.callout.primary, .callout.primary h1 {
+    background-color: #4267B2;
+    color: #f2f2f2;
+}
+
+.button{
+    background: #4267B2;
+    background-color: #4267B2;
+    float: right;
+}
+.button:hover, .button:active, .button:focus{
+    background-color: #34518d;
+}

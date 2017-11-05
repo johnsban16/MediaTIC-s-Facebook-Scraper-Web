@@ -1,0 +1,39 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<div class="callout large primary">
+    <div class="row column text-center">
+      <h1>MediaTic's Facebook Scraper</h1>
+    </div>
+  </div>
+
+  {% from "includes/_formhelpers.html" import render_field %}
+
+<form method="POST" action="">
+    <div class="row">
+        <div class="small-12 large-4 columns">
+           <!-- {{render_field(form.media_id, class_="form-control")}} -->
+           <label>Media
+                {{form.media_id(class_="form-control")}}
+          </label>
+        </div>
+        <div class="small-12 large-4 columns">
+            <label>Since date
+                {{form.since_date(class_="form-control", placeholder="Y-m-d H:M:S")}}
+            </label>
+           <!-- {{render_field(form.since_date, class_="form-control")}}-->
+        </div>
+        <div class="small-12 large-4 columns">
+            <label>Until date
+                {{form.until_date(class_="form-control", placeholder="Y-m-d H:M:S")}}
+            </label>
+            <!-- {{render_field(form.until_date, class_="form-control")}}-->
+        </div>
+    </div>
+    <div class="row">
+        <div class="small-6 large-4 columns">
+            <input type="submit" class="button" value="Scrape">
+        </div>
+    </div>
+  </form>
+{% endblock %}
