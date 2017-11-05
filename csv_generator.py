@@ -1,4 +1,5 @@
 import sys
+import os
 import copy
 import csv
 import datetime
@@ -356,7 +357,8 @@ def generateCSV(mediaName, sinceDate, untilDate):
 					  'edges_comments_'+mediaName+'_'+sinceFormated+'-'+untilFormated+'.csv',
 					  version="2.10")
 
-    zipedData = zipfile.ZipFile(mediaName+'_'+sinceFormated+'-'+untilFormated+'.zip', mode='w')
+    zipedData = zipfile.ZipFile('uploads/'+mediaName+'_'+sinceFormated+'-'+untilFormated+'.zip', mode='w')
+    fileN = mediaName+'_'+sinceFormated+'-'+untilFormated+'.zip'
     try:
         zipedData.write('nodes_posts_'+mediaName+'_'+sinceFormated+'-'+untilFormated+'.csv')
         zipedData.write('edges_posts_'+mediaName+'_'+sinceFormated+'-'+untilFormated+'.csv')
@@ -364,3 +366,8 @@ def generateCSV(mediaName, sinceDate, untilDate):
         zipedData.write('edges_comments_'+mediaName+'_'+sinceFormated+'-'+untilFormated+'.csv')
     finally:
         zipedData.close()
+        os.remove('nodes_posts_'+mediaName+'_'+sinceFormated+'-'+untilFormated+'.csv')
+        os.remove('edges_posts_'+mediaName+'_'+sinceFormated+'-'+untilFormated+'.csv')
+        os.remove('nodes_comments_'+mediaName+'_'+sinceFormated+'-'+untilFormated+'.csv')
+        os.remove('edges_comments_'+mediaName+'_'+sinceFormated+'-'+untilFormated+'.csv')
+    return fileN

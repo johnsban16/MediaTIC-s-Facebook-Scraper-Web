@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash, redirect, url_for, session, request 
+from flask import Flask, render_template, flash, redirect, url_for, session, request, current_app, send_from_directory
 from wtforms import Form, SelectField, StringField, TextAreaField, validators
 from werkzeug.utils import secure_filename
 
@@ -28,8 +28,9 @@ def index():
         mID = form.media_id.data
         sDt = form.since_date.data
         uDt = form.until_date.data
-        generateCSV(mID, sDt, uDt)
-        redirect(url_for('Nacion_2017-11-03-2017-11-04.zip'))
+        fileName = generateCSV(mID, sDt, uDt)
+        uploads = os.path.join(current_app.root_path, app.config['UPLOAD_FOLDER'])
+        return send_from_directory(directory=uploads, filename=fileName)
     return render_template('index.html', form=form)
 
 @app.route('/about')
