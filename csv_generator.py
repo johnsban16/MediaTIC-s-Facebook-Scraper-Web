@@ -230,7 +230,7 @@ def getAccessToken(client_id, client_secret):
 
 def addCommentsAndRepliesToCSV(comments, nodeoutfile, edgeoutfile):
     for comment in comments['data']:
-        parent_comment_id = [ comment['id'] ]
+        parent_comment_id = [ comment['id'],'comment',comment['message'], comment['created_time']]
         csv_data = []
         csv_data.insert(0, parent_comment_id)
         save_csv(nodeoutfile, csv_data, file_mode="a")
@@ -239,7 +239,7 @@ def addCommentsAndRepliesToCSV(comments, nodeoutfile, edgeoutfile):
                 list_of_user_in_reply = []
                 if reply['from']['id'] not in list_of_user_in_reply:
                     list_of_user_in_reply.append(reply['from']['id'])
-                    reply_id = [reply['from']['id']]
+                    reply_id = [reply['from']['id'], 'reply', reply['message'], reply['created_time']]
                     csv_data = []
                     csv_data.insert(0, reply_id)
                     save_csv(nodeoutfile, csv_data, file_mode="a")
@@ -250,16 +250,29 @@ def addCommentsAndRepliesToCSV(comments, nodeoutfile, edgeoutfile):
                     save_csv(edgeoutfile, csv_data, file_mode="a")
 
 def addPostsAndCommentsToCSV(post, outfile_nodes, outfile_edges):
-    list_posts = [post['id']]
+
+    post_reaction_count = post['like']['summary']['total_count'] + post['love']['summary']['total_count'] + \
+                          post['wow']['summary']['total_count'] + post['haha']['summary']['total_count'] + \
+                          post['sad']['summary']['total_count'] + post['angry']['summary']['total_count']
+    post_share_count = post['shares']['count'] if 'shares' in post else 0
+    post_comments = 0
+    if 'comments' in post:
+        post_comments = len(post['comments']['data'])
+    post_engagement = post_share_count + post_reaction_count + post_comments
+    list_posts = [post['id'], post['type'], optional_field(post,'link'), optional_field(post,'name'),
+                    optional_field(post,'message'), post['created_time'],
+                    optional_field(post,'shares'), optional_field(post, 'likes'), post_comments, post_reaction_count, post_engagement]
     csv_data = []
     csv_data.insert(0, list_posts)
     save_csv(outfile_nodes, csv_data, file_mode="a")
+
     if 'comments' in post:
         for comment in post['comments']['data']:
             list_of_user_in_post = []
             if comment['from']['id'] not in list_of_user_in_post:
                 list_of_user_in_post.append(comment['from']['id'])
-                list_comment_id = [comment['from']['id']]
+                list_comment_id = [comment['from']['id'], 'user' ,'', '', 
+                                    comment['message'], '', comment['created_time']]
                 csv_data = []
                 csv_data.insert(0, list_comment_id)
                 save_csv(outfile_nodes, csv_data, file_mode="a")
@@ -271,7 +284,7 @@ def addPostsAndCommentsToCSV(post, outfile_nodes, outfile_edges):
 
 def buildCommentsCSVs(client_id, client_secret, site_id, since, until, outfile_nodes, outfile_edges, version="2.10"):
     fb_token = getAccessToken(client_id, client_secret)
-    field_list = 'id,message,created_time,comments{id,message,comments{id,message,from}}'
+    field_list = 'id,message,created_time,comments{id,message,from,created_time,comments{id,message,from,created_time}}'
     #data_url = 'https://graph.facebook.com/v' + version + '/' + site_id + '?fields=posts{' + field_list + '}&limit=100&' + fb_token
 
     #&since='+since+'&until='+ until
@@ -279,7 +292,7 @@ def buildCommentsCSVs(client_id, client_secret, site_id, since, until, outfile_n
     next_item = url_retry(data_url)
 
     # set CSV headers
-    headerNodeFile = ['node_id']
+    headerNodeFile = ['node_id', 'type', 'message', 'created_time']
     csv_data = []
     csv_data.insert(0, headerNodeFile)
     save_csv(outfile_nodes, csv_data, file_mode="a")
@@ -303,12 +316,16 @@ def buildCommentsCSVs(client_id, client_secret, site_id, since, until, outfile_n
 
 def buildPostCSVs(client_id, client_secret, site_id, since, until, outfile_nodes, outfile_edges, version="2.10"):
     fb_token = getAccessToken(client_id, client_secret)
-    field_list = 'id,comments{id,from}'
+    reaction_count_queries = 'reactions.type(LIKE).limit(0).summary(1).as(like),reactions.type(WOW).limit(0).summary(1).as(wow),' \
+                             'reactions.type(SAD).limit(0).summary(1).as(sad),reactions.type(HAHA).limit(0).summary(1).as(haha),' \
+                             'reactions.type(LOVE).limit(0).summary(1).as(love),reactions.type(ANGRY).limit(0).summary(1).as(angry)'
+    field_list = 'id,comments{id,from,message,created_time},message,link,name,type,created_time,shares,likes.summary(total_count).limit(0),' + reaction_count_queries
     #data_url = 'https://graph.facebook.com/v' + version + '/' + site_id + '?fields=posts{' + field_list + '}&limit=100&' + fb_token
     data_url = 'https://graph.facebook.com/v' + version + '/' + site_id + '/posts?fields=' + field_list + '&limit=100&since='+str(since)+'&until='+str(until)+'&' + fb_token
     next_item = url_retry(data_url)
 
-    headerNodeFile = ['node_id']
+    headerNodeFile = ['node_id', 'type', 'link', 'name','message', 'created_time',
+                  'shares', 'likes', 'comment_count','reactions', 'engagment']
     csv_data = []
     csv_data.insert(0, headerNodeFile)
     save_csv(outfile_nodes, csv_data, file_mode="a")
@@ -338,7 +355,11 @@ def generateCSV(mediaName, sinceDate, untilDate):
                  'Financiero': '47921680333',
                  'Semanario': '119189668150973',
                  'Tico Times': '124823954224180',
-                 'Extra': '109396282421232'}
+                 'Extra': '109396282421232',
+                 'Prensa Libre': '228302277255192',
+                 'Telenoticias': '116842558326954',
+                 'Repretel': '100237323349361',
+                 'Monumental': '111416968911423'}
 
     date  = datetime.datetime.strptime(sinceDate, "%Y-%m-%d %H:%M:%S")
     since = calendar.timegm(date.utctimetuple())

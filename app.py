@@ -17,7 +17,11 @@ class ScrapeForm(Form):
                                             ('Financiero', 'Financiero'),
                                             ('Semanario', 'Semanario'),
                                             ('Tico Times', 'Tico Time'),
-                                            ('Extra', 'La Extra')])
+                                            ('Extra', 'La Extra'),
+                                            ('Prensa Libre','Prensa Libre'),
+                                            ('Telenoticias','Telenoticias'),
+                                            ('Repretel','Repretel'),
+                                            ('Monumental','Monumental')])
     since_date = StringField('Since date', [validators.Length(min=17, max=17)])
     until_date = StringField('Until Date', [validators.Length(min=17, max=17)])
 
@@ -30,7 +34,7 @@ def index():
         uDt = form.until_date.data
         fileName = generateCSV(mID, sDt, uDt)
         uploads = os.path.join(current_app.root_path, app.config['UPLOAD_FOLDER'])
-        return send_from_directory(directory=uploads, filename=fileName)
+        return send_from_directory(directory=uploads, filename=fileName,as_attachment=True, attachment_filename=fileName)
     return render_template('index.html', form=form)
 
 @app.route('/about')
