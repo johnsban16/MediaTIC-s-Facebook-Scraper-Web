@@ -272,7 +272,7 @@ def addPostsAndCommentsToCSV(post, outfile_nodes, outfile_edges):
             if comment['from']['id'] not in list_of_user_in_post:
                 list_of_user_in_post.append(comment['from']['id'])
                 list_comment_id = [comment['from']['id'], 'user' ,'', '', 
-                                    comment['message'], '', comment['created_time']]
+                                    comment['message'], comment['created_time']]
                 csv_data = []
                 csv_data.insert(0, list_comment_id)
                 save_csv(outfile_nodes, csv_data, file_mode="a")
@@ -281,6 +281,42 @@ def addPostsAndCommentsToCSV(post, outfile_nodes, outfile_edges):
                 csv_data = []
                 csv_data.insert(0, edge)
                 save_csv(outfile_edges, csv_data, file_mode="a")
+
+def addPostsAndReactionsToCSV(post, outfile_nodes, outfile_edges):
+
+    reaction_types = ['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'ANGER']
+    for reaction in reaction_types:
+        list_posts = [post['id'], post['type'], '', optional_field(post, 'link'), optional_field(post, 'name'),
+                      optional_field(post, 'message'), post['created_time']]
+        csv_data = []
+        csv_data.insert(0, list_posts)
+        save_csv(outfile_nodes + '_' + reaction + '.csv', csv_data, file_mode="a")
+
+    if 'reactions' in post:
+        for reaction in post['reactions']['data']:
+            list_reactions_id = [reaction['id'], 'user', reaction['type'] , '', '', '', '']
+            csv_data = []
+            csv_data.insert(0, list_reactions_id)
+            save_csv(outfile_nodes + '_' + reaction['type'] + '.csv', csv_data, file_mode="a")
+            # insertar las aristas
+            csv_data = []
+            edge = [reaction['id'], post['id']]
+            csv_data.insert(0, edge)
+            save_csv(outfile_edges + '_' + reaction['type'] + '.csv', csv_data, file_mode="a")
+
+        while 'paging' in post['reactions'] and 'next' in post['reactions']['paging']:
+            post['reactions'] = url_retry(post['reactions']['paging']['next'])
+            for reaction in post['reactions']['data']:
+                list_reactions_id = [reaction['id'], 'user', reaction['type'], '', '', '', '']
+                csv_data = []
+                csv_data.insert(0, list_reactions_id)
+                save_csv(outfile_nodes + '_' + reaction['type'] + '.csv', csv_data, file_mode="a")
+                # insertar las aristas
+                edge = [reaction['id'], post['id']]
+                csv_data = []
+                csv_data.insert(0, edge)
+                save_csv(outfile_edges + '_' + reaction['type'] + '.csv', csv_data, file_mode="a")
+
 
 def buildCommentsCSVs(client_id, client_secret, site_id, since, until, outfile_nodes, outfile_edges, version="2.10"):
     fb_token = getAccessToken(client_id, client_secret)
@@ -337,6 +373,42 @@ def buildPostCSVs(client_id, client_secret, site_id, since, until, outfile_nodes
 
     for post in next_item['data']:
         addPostsAndCommentsToCSV(post,outfile_nodes,outfile_edges)
+
+    while 'paging' in next_item and 'next' in next_item['paging']:
+        next_item = url_retry(next_item['paging']['next'])
+        for post in next_item['data']:
+            addPostsAndCommentsToCSV(post, outfile_nodes, outfile_edges)
+
+def buildReactionsCSVs(client_id, client_secret, site_id, since, until, outfile_nodes, outfile_edges, version="2.10"):
+    fb_token = getAccessToken(client_id, client_secret)
+    field_list = 'id,message,created_time,link,name,type,reactions'
+    data_url = 'https://graph.facebook.com/v' + version + '/' + site_id + '/posts?fields=' + field_list + '&limit=100&since='+str(since)+'&until'+str(until)+'&'+fb_token
+    next_item = url_retry(data_url)
+
+    reaction_types = ['LIKE','LOVE','HAHA','WOW','SAD','ANGER']
+    for reaction in reaction_types:
+        headerNodeFile = ['node_id', 'type', 'reaction_type', 'link', 'name', 'message', 'created_time']
+        csv_data = []
+        csv_data.insert(0, headerNodeFile)
+        save_csv(outfile_nodes + '_' + reaction + '.csv', csv_data, file_mode="a")
+
+        headerEdgeFile = ['source', 'target']
+        csv_data = []
+        csv_data.insert(0, headerEdgeFile)
+        save_csv(outfile_edges + '_' + reaction + '.csv', csv_data, file_mode="a")
+
+    #headerNodeFile = ['node_id', 'type', 'reaction_type', 'link', 'name','message', 'created_time']
+    #csv_data = []
+    #csv_data.insert(0, headerNodeFile)
+    #save_csv(outfile_nodes, csv_data, file_mode="a")
+#
+    #headerEdgeFile = ['source', 'target']
+    #csv_data = []
+    #csv_data.insert(0, headerEdgeFile)
+    #save_csv(outfile_edges, csv_data, file_mode="a")
+
+    for post in next_item['data']:
+        addPostsAndReactionsToCSV(post, outfile_nodes, outfile_edges)
 
     while 'paging' in next_item and 'next' in next_item['paging']:
         next_item = url_retry(next_item['paging']['next'])
