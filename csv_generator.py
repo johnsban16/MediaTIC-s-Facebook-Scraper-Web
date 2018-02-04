@@ -284,7 +284,7 @@ def addPostsAndCommentsToCSV(post, outfile_nodes, outfile_edges):
 
 def addPostsAndReactionsToCSV(post, outfile_nodes, outfile_edges):
 
-    reaction_types = ['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'ANGER']
+    reaction_types = ['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD', 'ANGRY']
     for reaction in reaction_types:
         list_posts = [post['id'], post['type'], '', optional_field(post, 'link'), optional_field(post, 'name'),
                       optional_field(post, 'message'), post['created_time']]
@@ -306,16 +306,17 @@ def addPostsAndReactionsToCSV(post, outfile_nodes, outfile_edges):
 
         while 'paging' in post['reactions'] and 'next' in post['reactions']['paging']:
             post['reactions'] = url_retry(post['reactions']['paging']['next'])
-            for reaction in post['reactions']['data']:
-                list_reactions_id = [reaction['id'], 'user', reaction['type'], '', '', '', '']
-                csv_data = []
-                csv_data.insert(0, list_reactions_id)
-                save_csv(outfile_nodes + '_' + reaction['type'] + '.csv', csv_data, file_mode="a")
-                # insertar las aristas
-                edge = [reaction['id'], post['id']]
-                csv_data = []
-                csv_data.insert(0, edge)
-                save_csv(outfile_edges + '_' + reaction['type'] + '.csv', csv_data, file_mode="a")
+            if 'data' in post['reactions'] != False:
+                for reaction in post['reactions']['data']:
+                    list_reactions_id = [reaction['id'], 'user', reaction['type'], '', '', '', '']
+                    csv_data = []
+                    csv_data.insert(0, list_reactions_id)
+                    save_csv(outfile_nodes + '_' + reaction['type'] + '.csv', csv_data, file_mode="a")
+                    # insertar las aristas
+                    edge = [reaction['id'], post['id']]
+                    csv_data = []
+                    csv_data.insert(0, edge)
+                    save_csv(outfile_edges + '_' + reaction['type'] + '.csv', csv_data, file_mode="a")
 
 
 def buildCommentsCSVs(client_id, client_secret, site_id, since, until, outfile_nodes, outfile_edges, version="2.10"):
@@ -380,12 +381,13 @@ def buildPostCSVs(client_id, client_secret, site_id, since, until, outfile_nodes
             addPostsAndCommentsToCSV(post, outfile_nodes, outfile_edges)
 
 def buildReactionsCSVs(client_id, client_secret, site_id, since, until, outfile_nodes, outfile_edges, version="2.10"):
-    fb_token = getAccessToken(client_id, client_secret)
+    #fb_token = getAccessToken(client_id, client_secret)
+    fb_token = 'access_token=EAADwxu80AFgBAIJFqWApaTRUJpHZA0PbZCYG27N5GwxLRrLKoWgpo00wtgkjpYO6cSGjEWvtf8ZBTdVcnLBz1DB1It5dhMZCNBT8Xgs18M97oZB40n9wLZCItjQWmVWD3AwdUz5q2ZBjIGyto8MlOqbNxZCMaCdtkf11zv9sFrv4DgZDZD'
     field_list = 'id,message,created_time,link,name,type,reactions'
-    data_url = 'https://graph.facebook.com/v' + version + '/' + site_id + '/posts?fields=' + field_list + '&limit=100&since='+str(since)+'&until'+str(until)+'&'+fb_token
+    data_url = 'https://graph.facebook.com/v' + version + '/' + site_id + '/posts?fields=' + field_list + '&limit=100&since='+str(since)+'&until='+str(until)+'&'+fb_token
     next_item = url_retry(data_url)
 
-    reaction_types = ['LIKE','LOVE','HAHA','WOW','SAD','ANGER']
+    reaction_types = ['LIKE','LOVE','HAHA','WOW','SAD','ANGRY']
     for reaction in reaction_types:
         headerNodeFile = ['node_id', 'type', 'reaction_type', 'link', 'name', 'message', 'created_time']
         csv_data = []
@@ -413,7 +415,7 @@ def buildReactionsCSVs(client_id, client_secret, site_id, since, until, outfile_
     while 'paging' in next_item and 'next' in next_item['paging']:
         next_item = url_retry(next_item['paging']['next'])
         for post in next_item['data']:
-            addPostsAndCommentsToCSV(post, outfile_nodes, outfile_edges)
+            addPostsAndReactionsToCSV(post, outfile_nodes, outfile_edges)
 
 def generateCSV(mediaName, sinceDate, untilDate):
     # MediaTic's App's Info

@@ -48,3 +48,12 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+
+# Pycharm proyect 
+.idea/
+*.xml
+*.iml
+
+# Generated files
+*.rar
+*.zip
